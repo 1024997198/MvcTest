@@ -33,23 +33,6 @@
     <div class="container body-content">
         @RenderBody()
         <hr />
-        @if (User.Identity.IsAuthenticated)
-        {
-            using (Html.BeginForm("Logout", "Home", FormMethod.Post, new { id = "logoutForm" }))
-            {
-                @Html.AntiForgeryToken()
-                <ul class="nav navbar-nav navbar-right">
-                    <li><a href="javascript:;">Hello, @User.Identity.Name</a></li>
-                    <li><a href="javascript:;" id="logout">退出系统</a></li>
-                </ul>
-            }
-        }
-        else
-        {
-            <ul class="nav navbar-nav navbar-right">
-                <li>@Html.ActionLink("登录", "Login", "Home")</li>
-            </ul>
-        }
 
         <footer>
             <p>&copy; @DateTime.Now.Year - 我的 ASP.NET 应用程序</p>

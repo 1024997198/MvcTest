@@ -9,6 +9,16 @@
 <p>
     @Html.ActionLink("Create New", "Create")
 </p>
+@using (Html.BeginForm("Index", "Students", FormMethod.Post, new { id = "searchForm" }))
+{
+    @Html.AntiForgeryToken()
+    <p>
+        所学专业: @Html.DropDownList("Major",ViewBag.MajorList as IEnumerable<SelectListItem>, "全部")
+        姓名: @Html.TextBox("Name")
+        <input type="hidden" id="PageIndex" name="PageIndex" value="0" />
+        <input id="searchButton" type="submit" value="检索" />
+    </p>
+}
 <table class="table">
     <tr>
         <th>
@@ -32,7 +42,14 @@
             @Html.DisplayFor(modelItem => item.Name)
         </td>
         <td>
-            @Html.DisplayFor(modelItem => item.Gender)
+            @if (item.Gender == 1)
+            {
+                @:男
+            }
+            else
+            {
+                @:女
+            }
         </td>
         <td>
             @Html.DisplayFor(modelItem => item.Major)
@@ -49,3 +66,39 @@
 }
 
 </table>
+<hr/>
+<div id="pagebar">
+    @for (var i = 0; i < ViewBag.PageCount; i++)
+    {
+        if (i == ViewBag.PageIndex)
+        {
+            <span class="currentpagenumber">@(i + 1)</span>
+        }
+        else
+        {
+            <a class="pagenumber" href="javascript:;">@(i + 1)</a>
+        }
+    }
+</div>
+
+@section scripts {
+    <script>
+        function submitForm(pagenumber) {
+            pagenumber = parseInt(pagenumber, 10);
+            $('#PageIndex').val(pagenumber - 1);
+            $('#searchForm').submit();
+        }
+
+        $(function () {
+
+            $('#searchButton').click(function () {
+                submitForm($('#pagebar .currentpagenumber').text());
+            });
+
+            $('#pagebar .pagenumber').click(function () {
+                submitForm($(this).text());
+            });
+
+        });
+    </script>
+}

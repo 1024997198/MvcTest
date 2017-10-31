@@ -13,11 +13,77 @@ namespace MvcTest.Controllers
     public class StudentsController : Controller
     {
         private StudentDbContext db = new StudentDbContext();
+        private static readonly int PAGE_SIZE = 3;
 
         // GET: Students
         public ActionResult Index()
         {
-            return View(db.Students.ToList());
+            var recordCount = db.Students.Count();
+            var pageCount = GetPageCount(recordCount);
+
+            ViewBag.PageIndex = 0;
+            ViewBag.PageCount = pageCount;
+
+            ViewBag.MajorList = GetMajorList();
+            return View(GetPagedDataSource(db.Students, 0, recordCount));
+        }
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public ActionResult Index(string Major,string Name)
+        //{
+        //    var students = db.Students as IQueryable<Student>;
+        //    if (!String.IsNullOrEmpty(Name))
+        //    {
+        //        students = students.Where(m => m.Name.Contains(Name));
+        //    }
+
+        //    if (!String.IsNullOrEmpty(Major))
+        //    {
+        //        students = students.Where(m => m.Major == Major);
+        //    }
+
+        //    var recordCount = db.Students.Count();
+        //    var pageCount = GetPageCount(recordCount);
+
+        //    ViewBag.PageIndex = 0;
+        //    ViewBag.PageCount = pageCount;
+
+        //    ViewBag.MajorList = GetMajorList();
+        //    return View(GetPagedDataSource(students, 0, recordCount));
+        //}
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Index(string Major, string Name, int PageIndex)
+        {
+            var students = db.Students as IQueryable<Student>;
+            if (!String.IsNullOrEmpty(Name))
+            {
+                students = students.Where(m => m.Name.Contains(Name));
+            }
+
+            if (!String.IsNullOrEmpty(Major))
+            {
+                students = students.Where(m => m.Major == Major);
+            }
+
+
+            var recordCount = students.Count();
+            var pageCount = GetPageCount(recordCount);
+            if (PageIndex >= pageCount && pageCount >= 1)
+            {
+                PageIndex = pageCount - 1;
+            }
+
+            students = students.OrderBy(m => m.Name)
+                 .Skip(PageIndex * PAGE_SIZE).Take(PAGE_SIZE);
+
+            ViewBag.PageIndex = PageIndex;
+            ViewBag.PageCount = pageCount;
+
+            ViewBag.MajorList = GetMajorList();
+            return View(students.ToList());
         }
 
         // GET: Students/Details/5
@@ -38,6 +104,7 @@ namespace MvcTest.Controllers
         // GET: Students/Create
         public ActionResult Create()
         {
+            ViewBag.GenderList = GetGenderList();
             return View();
         }
 
@@ -54,7 +121,7 @@ namespace MvcTest.Controllers
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
-
+            ViewBag.GenderList = GetGenderList();
             return View(student);
         }
 
@@ -70,6 +137,7 @@ namespace MvcTest.Controllers
             {
                 return HttpNotFound();
             }
+            ViewBag.GenderList = GetGenderList();
             return View(student);
         }
 
@@ -86,6 +154,7 @@ namespace MvcTest.Controllers
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
+            ViewBag.GenderList = GetGenderList();
             return View(student);
         }
 
@@ -113,6 +182,67 @@ namespace MvcTest.Controllers
             db.Students.Remove(student);
             db.SaveChanges();
             return RedirectToAction("Index");
+        }
+
+        private List<SelectListItem> GetGenderList()
+        {
+            return new List<SelectListItem>() {
+              new SelectListItem
+              {
+                     Text = "男",
+                     Value = "1"
+              },new SelectListItem
+              {
+                     Text = "女",
+                     Value = "0"
+              }
+             };
+        }
+
+
+      private List<SelectListItem> GetMajorList()
+        {
+            return new List<SelectListItem>() {
+              new SelectListItem
+              {
+                     Text = "计算机",
+                     Value = "计算机"
+              },new SelectListItem
+              {
+                     Text = "数学",
+                     Value = "数学"
+              },new SelectListItem
+              {
+                     Text = "语文",
+                     Value = "语文"
+              }
+             };
+        }
+
+
+
+        private int GetPageCount(int recordCount)
+        {
+            int pageCount = recordCount / PAGE_SIZE;
+            if (recordCount % PAGE_SIZE != 0)
+            {
+                pageCount += 1;
+            }
+            return pageCount;
+        }
+
+        private List<Student> GetPagedDataSource(IQueryable<Student> students,
+        int pageIndex, int recordCount)
+        {
+            var pageCount = GetPageCount(recordCount);
+            if (pageIndex >= pageCount && pageCount >= 1)
+            {
+                pageIndex = pageCount - 1;
+            }
+
+            return students.OrderBy(m => m.Name)
+     .Skip(pageIndex * PAGE_SIZE)
+     .Take(PAGE_SIZE).ToList();
         }
 
         protected override void Dispose(bool disposing)
